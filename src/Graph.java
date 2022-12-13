@@ -7,9 +7,11 @@ public class Graph {
     public Graph(int[][] distanceMatrix) {
         this.distanceMatrix = distanceMatrix;
     }
-    /*public Graph() {
-        distanceMatrix = new int[][]{{-1,10,15,20},{5,-1,9,10},{6,13,-1,12},{8,8,9,-1}};
-    }*/
+
+    public Graph() {
+
+    }
+
 
     public static ArrayList<Integer> swap (ArrayList<Integer> path) {
         Random random = new Random();
@@ -62,6 +64,17 @@ public class Graph {
             distance+= distanceMatrix[path.get(i)][path.get(i+1)];
         }
         return distance;
+    }
+
+    public static void printPath(ArrayList<Integer> path) {
+        int size = path.size();
+        for (int i = 0; i < path.size(); i++) {
+            if (i != path.size() - 1) {
+                System.out.print(path.get(i));
+                System.out.print(" -> ");
+            } else System.out.print(path.get(i));
+        }
+        System.out.println();
     }
 
     public int getHowManyCities() {

@@ -1,13 +1,14 @@
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Scanner;
 
 public class SimulatedAnnealing {
-    private double temperature = 10000d;
+    private double temperature = -1d;
     private double differenceOfDistances = 0d;
     private double cooling = 0.99d;
 
-    private final int maxTime = 360;
+    private int maxTime = 30000;
 
 
     private int distance = 0;
@@ -18,28 +19,30 @@ public class SimulatedAnnealing {
 
 
     private Graph graph;
-    public SimulatedAnnealing(Graph graph) {
-        this.graph = graph;
-    }
 
-    public SimulatedAnnealing(double temperature, double differenceOfDistances, double cooling, double finalTemperature) {
-        this.temperature = temperature;
-        this.differenceOfDistances = differenceOfDistances;
-        this.cooling = cooling;
+
+    public SimulatedAnnealing() {
 
     }
+
 
     public int run() {
         Random random = new Random();
         actualPath = graph.getFirstPath();
         distance = graph.calculateDistance(actualPath);
-        ArrayList bestPath = new ArrayList<Integer>();
+        int howManyVertices = graph.getHowManyCities();
+        double timeWhenFoundTheBestSolution = 0;
+        ArrayList bestPath;
         bestPath = (ArrayList) actualPath.clone();
         int bestDistance = distance;
         long actualTime = 0;
         long start;
+
+        if(temperature == -1d) temperature = bestDistance * 100;
+        double temperatureWhenFound = temperature;
         while(actualTime <= maxTime) {
-                start = System.nanoTime();
+            for (int i = 0; i < howManyVertices; i++) {
+                start = System.currentTimeMillis();
                 newPath = Graph.swap((ArrayList<Integer>) actualPath.clone());
                 differenceOfDistances = graph.calculateDistance(newPath) - graph.calculateDistance(actualPath);
                 if (graph.calculateDistance(newPath) < graph.calculateDistance(actualPath)) {
@@ -47,20 +50,83 @@ public class SimulatedAnnealing {
                     if (graph.calculateDistance(newPath) < bestDistance) {
                         bestPath = (ArrayList) newPath.clone();
                         bestDistance = graph.calculateDistance(newPath);
+                        timeWhenFoundTheBestSolution = actualTime + System.currentTimeMillis() - start;
+                        temperatureWhenFound = temperature;
                     }
                 } else if (Math.exp(-differenceOfDistances / temperature) > random.nextDouble())
                     actualPath = (ArrayList) newPath.clone();
-                actualTime += (System.nanoTime() - start)/1000000;
-                if(actualTime > maxTime) break;
+                actualTime += System.currentTimeMillis() - start;
+                if (actualTime > maxTime) break;
+            }
             temperature *= cooling;
         }
-        for (Object path1 : bestPath) System.out.println(path1);
+        Graph.printPath(bestPath);
+        System.out.println("Czas, w którym znaleziono najlepszą ścieżkę: " + timeWhenFoundTheBestSolution/1000.0d + "s");
+        System.out.println("Temperatura w tamtym momencie: " + temperatureWhenFound);
         return bestDistance;
     }
 
-    public static void main(String[] args) throws FileNotFoundException {
-        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing(Data.createDistanesMatrix("C:\\Users\\filip\\Downloads\\drive-download-20221210T204245Z-001\\ftv170.atsp"));
-        System.out.println(simulatedAnnealing.run());
+    public void setGraph(Graph graph) {
+        this.graph = graph;
+    }
 
+    public void setMaxTime(int maxTime) {
+        this.maxTime = maxTime * 1000;
+    }
+
+    public void setCooling(double cooling) {
+        this.cooling = cooling;
+    }
+
+    public void setTemperature(double temperature) {
+        this.temperature = temperature;
+    }
+
+    public static void main(String[] args) throws FileNotFoundException {
+        String string = "-1";
+        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
+        Graph graph = new Graph();
+        while (!string.equals("8")) {
+            System.out.println("1. Wczytaj plik ftv47.atsp");
+            System.out.println("2. Wczytaj plik ftv170.atsp");
+            System.out.println("3. Wczytaj plik rbg403.atsp");
+            System.out.println("4. Ustaw kryterium stopu");
+            System.out.println("5. Ustaw temperaturę początkową");
+            System.out.println("6. Ustaw współczynnik alpha");
+            System.out.println("7. Symulowane wyżarzanie dla wcześniej wczytanego pliku");
+            System.out.println("8. Koniec pracy z programem");
+            Scanner scanner = new Scanner(System.in);
+            string = scanner.nextLine();
+            switch (string) {
+                case "1" -> {
+                    graph = Data.createDistanceMatrix("C:\\Users\\filip\\IdeaProjects\\ProjektowanieEfektywnychAlgorytmow2\\pliki_testowe\\ftv47.atsp");
+                }
+                case "2" -> {
+                    graph = Data.createDistanceMatrix("C:\\Users\\filip\\IdeaProjects\\ProjektowanieEfektywnychAlgorytmow2\\pliki_testowe\\ftv170.atsp");
+                }
+                case "3" -> {
+                    graph = Data.createDistanceMatrix("C:\\Users\\filip\\IdeaProjects\\ProjektowanieEfektywnychAlgorytmow2\\pliki_testowe\\rbg403.atsp");
+                }
+                case "4" -> {
+                    System.out.println("Podaj czas w sekundach");
+                    simulatedAnnealing.setMaxTime(scanner.nextInt());
+                    scanner.nextLine();
+                }
+                case "5" -> {
+                    System.out.println("Podaj temperaturę początkową");
+                    simulatedAnnealing.setTemperature(scanner.nextDouble());
+                    scanner.nextLine();
+                }
+                case "6" -> {
+                    System.out.println("Podaj wartość współczynnika alpha");
+                    simulatedAnnealing.setCooling(scanner.nextDouble());
+                    scanner.nextLine();
+                }
+                case "7" -> {
+                    simulatedAnnealing.setGraph(graph);
+                    System.out.println(simulatedAnnealing.run());
+                }
+            }
+        }
     }
 }
